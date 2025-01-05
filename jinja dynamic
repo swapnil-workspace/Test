@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic PDF Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+
+        /* Page Breaks */
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+    <h1>Dynamic PDF Report - {{ date }}</h1>
+    <p>Date: {{ date }}</p>
+    
+    {% for table in tables %}
+        <h2>Details for {{ table.title }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in table.records %}
+                <tr>
+                    <td>{{ record.name }}</td>
+                    <td>{{ record.amount }}</td>
+                    <td>{{ record.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Page break after each table -->
+        <div class="page-break"></div>
+    {% endfor %}
+</body>
+</html>
+
+
+
+
+data = {
+    'date': 'January 5, 2025',
+    'tables': []
+}
+
+# Generate 100 tables with random data (for demonstration)
+for i in range(1, 101):
+    table_data = {
+        'title': f'Table {i}',
+        'records': [
+            {'name': f'Person {j}', 'amount': f'${100 * j}', 'status': 'Paid' if j % 2 == 0 else 'Pending'}
+            for j in range(1, 11)  # 10 records per table
+        ]
+    }
+    data['tables'].append(table_data)
+
+
+
+
+
+
+from jinja2 import Environment, FileSystemLoader
+from xhtml2pdf import pisa
+
+# Step 1: Set up Jinja2 to load the template
+env = Environment(loader=FileSystemLoader('templates'))  # Assuming the template is inside "templates" folder
+template = env.get_template('template.html')
+
+# Step 2: Render the HTML with dynamic data (tables)
+html_output = template.render(data)
+
+# Step 3: Convert the rendered HTML to PDF using xhtml2pdf
+def generate_pdf(html_content, output_file="report.pdf"):
+    with open(output_file, "wb") as pdf_file:
+        pisa.CreatePDF(html_content, dest=pdf_file)
+
+# Generate the PDF using the rendered HTML
+generate_pdf(html_output)
+
+print("PDF generated successfully!")
