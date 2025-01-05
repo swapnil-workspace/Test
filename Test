@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic PDF Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Dynamic PDF Report</h1>
+    <p>Date: {{ date }}</p>
+    
+    <h2>Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record.name }}</td>
+                <td>{{ record.amount }}</td>
+                <td>{{ record.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+data = {
+    'date': 'January 5, 2025',
+    'records': [
+        {'name': 'John Doe', 'amount': '$1200', 'status': 'Paid'},
+        {'name': 'Jane Smith', 'amount': '$900', 'status': 'Pending'},
+        {'name': 'Alice Brown', 'amount': '$500', 'status': 'Paid'}
+    ]
+}
+
+
+
+from jinja2 import Environment, FileSystemLoader
+
+# Set up Jinja2 to load the template
+env = Environment(loader=FileSystemLoader('templates'))
+template = env.get_template('template.html')
+
+# Render the HTML with dynamic data
+html_output = template.render(data)
+
+
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
+def generate_pdf(data, filename="report.pdf"):
+    # Set up the PDF document
+    document = SimpleDocTemplate(filename, pagesize=letter)
+    elements = []
+
+    # Title of the report
+    title = f"Dynamic PDF Report - {data['date']}"
+    elements.append(Paragraph(title, style=styles['Heading1']))
+
+    # Create table data for records
+    table_data = [['Name', 'Amount', 'Status']]  # Headers
+    for record in data['records']:
+        table_data.append([record['name'], record['amount'], record['status']])
+
+    # Create the table
+    table = Table(table_data)
+
+    # Apply styles to the table (border, background, font style, etc.)
+    table.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+    ]))
+
+    # Append the table to the elements list
+    elements.append(table)
+
+    # Build the PDF
+    document.build(elements)
+
+# Call the function with the data
+generate_pdf(data)
