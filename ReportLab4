@@ -1,0 +1,148 @@
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfgen import canvas
+from svglib.svglib import svg2rlg
+
+# Custom Doc Template with header, footer, and logo
+class MyDocTemplate(SimpleDocTemplate):
+    def __init__(self, filename, **kw):
+        SimpleDocTemplate.__init__(self, filename, **kw)
+
+    def beforePage(self):
+        # Access the canvas object for header and footer
+        canvas = self.canv
+        canvas.saveState()
+
+        # SVG Logo (adjust path and scaling)
+        logo_svg = svg2rlg("logo.svg")
+        logo_svg.width = 100
+        logo_svg.height = 50
+        logo_svg.drawOn(canvas, 40, 750)
+
+        # Horizontal Line Below Logo
+        canvas.setStrokeColor(colors.blue)
+        canvas.setLineWidth(1)
+        canvas.line(40, 740, 580, 740)  # Line across the page width
+
+        canvas.restoreState()
+
+    def afterPage(self):
+        # Footer
+        self.canv.setFont('Helvetica', 10)
+        self.canv.drawString(40, 20, "My Custom Footer - Page {}".format(self.page))
+
+# Create the PDF file and document
+pdf_file = "output_with_svg_logo_and_line.pdf"
+document = MyDocTemplate(pdf_file, pagesize=letter)
+
+# Content for the PDF
+content = []
+
+def process_page(header_text, table_data):
+    # Add Header (Paragraph)
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    header_paragraph = Paragraph(f"<b>{header_text}</b>", title_style)
+    content.append(header_paragraph)
+
+    # Table: Wrap the text with Paragraph in each cell for word wrapping
+    table = [table_data["col"]]  # Add columns
+
+    for key in table_data["row"]:
+        row = [
+            Paragraph(cell, styles['Normal']) for cell in table_data["row"][key]
+        ]
+        table.append(row)
+
+    # Set column widths: 30% for the first column and 70% for the second column
+    page_width = letter[0]  # 612 points for letter size
+    col1_width = page_width * 0.30  # 30% of the page width
+    col2_width = page_width * 0.70  # 70% of the page width
+
+    # Create the table and style it
+    table_obj = Table(table, colWidths=[col1_width, col2_width])
+
+    # Table styles to handle content overflow and wrapping
+    table_obj.setStyle(TableStyle([
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('WORDWRAP', (0, 0), (-1, -1), True),  # Enable word wrapping
+        ('LINEBEFORE', (0, 0), (-1, -1), 0.5, colors.black),
+        ('MAXRULE', (0, 0), (-1, -1), 1),  # Allow table to split
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),  # Add padding at the bottom of each cell
+    ]))
+
+    # Manually manage the pagination
+    row_count = len(table) - 1  # Subtracting header
+    rows_per_page = 10  # Approximate rows per page; adjust as necessary
+    page_index = 0
+
+    while page_index < row_count:
+        # Calculate the rows to include on this page
+        start_row = page_index * rows_per_page + 1
+        end_row = min((page_index + 1) * rows_per_page + 1, row_count + 1)
+        table_page = [table[0]] + table[start_row:end_row]
+
+        # Create the table object for this page segment
+        table_obj_page = Table(table_page, colWidths=[col1_width, col2_width])
+        table_obj_page.setStyle(TableStyle([
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('WORDWRAP', (0, 0), (-1, -1), True),
+            ('LINEBEFORE', (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+
+        # Add the table page to content
+        content.append(table_obj_page)
+
+        # Add a page break for the next part of the table
+        page_index += 1
+        if page_index < row_count:
+            content.append(PageBreak())
+
+# Sample JSON-like data (replace with actual data)
+data = [
+    {
+        "header": "Page 1 Header",
+        "table": {
+            "col": ["Column 1", "Column 2"],
+            "row": {
+                "0": ["val1", "val2"],
+                "1": ["This is a very long text that should wrap within the cell. " * 10, "val4"]
+            }
+        }
+    },
+    {
+        "header": "Page 2 Header",
+        "table": {
+            "col": ["Column 1", "Column 2"],
+            "row": {
+                "0": ["val5", "val6"],
+                "1": ["val7", "val8"]
+            }
+        }
+    }
+]
+
+# Process each page in the data
+for page_data in data:
+    process_page(page_data["header"], page_data["table"])
+
+# Build the document with the content
+document.build(content)
+
+print("PDF generated successfully with pagination and word wrapping!")
