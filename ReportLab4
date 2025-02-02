@@ -4,6 +4,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak, Table, T
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfgen import canvas
 from svglib.svglib import svg2rlg
+from reportlab.lib.units import inch
 
 # Custom Doc Template with header, footer, and logo
 class MyDocTemplate(SimpleDocTemplate):
@@ -80,7 +81,7 @@ def process_page(header_text, table_data):
         ('BOTTOMPADDING', (0, 0), (-1, -1), 5),  # Add padding at the bottom of each cell
     ]))
 
-    # Manually manage the pagination
+    # Now we will manually break the table into smaller pieces if necessary
     row_count = len(table) - 1  # Subtracting header
     rows_per_page = 10  # Approximate rows per page; adjust as necessary
     page_index = 0
