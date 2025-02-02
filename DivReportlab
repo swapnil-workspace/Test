@@ -1,0 +1,94 @@
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, PageBreak, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+
+# Custom class for creating "div-based" layout
+class DivBasedLayout(SimpleDocTemplate):
+    def __init__(self, filename, **kw):
+        super().__init__(filename, **kw)
+
+    def beforePage(self):
+        canvas = self.canv
+        canvas.saveState()
+
+        # Example header (logo, etc.)
+        canvas.setFont("Helvetica-Bold", 14)
+        canvas.drawString(40, 750, "My Custom Header")
+
+        canvas.restoreState()
+
+    def afterPage(self):
+        canvas = self.canv
+        canvas.setFont("Helvetica", 8)
+        canvas.drawString(40, 20, "My Custom Footer - Page {}".format(self.page))
+
+# Create the PDF file and document
+pdf_file = "output_with_div_style_table.pdf"
+document = DivBasedLayout(pdf_file, pagesize=letter)
+
+# Content for the PDF
+content = []
+
+# Simulate the "table" with divs
+def create_div_table(content_data):
+    styles = getSampleStyleSheet()
+
+    # Define starting position (x, y) for drawing the "table"
+    x_start = 40
+    y_start = 700  # Start just below header (adjust as necessary)
+    row_height = 20  # Height for each row
+    col_widths = [200, 200]  # Column widths (can be adjusted)
+
+    for page_data in content_data:
+        # Draw the "table header" (simulate div-based header)
+        header = page_data['header']
+        paragraph = Paragraph(f"<b>{header}</b>", styles['Heading2'])
+        paragraph.wrapOn(document.canv, col_widths[0], row_height)
+        paragraph.drawOn(document.canv, x_start, y_start)
+        
+        y_start -= 2 * row_height  # Adjust to give space for the header
+
+        # Draw table rows (simulate div-based table)
+        for row in page_data['rows']:
+            y_start -= row_height  # Move down for each new row
+            for col, text in enumerate(row):
+                paragraph = Paragraph(text, styles['Normal'])
+                paragraph.wrapOn(document.canv, col_widths[col], row_height)
+                paragraph.drawOn(document.canv, x_start + col * col_widths[col], y_start)
+
+            # If a row exceeds the page height, add a page break
+            if y_start < 50:
+                content.append(PageBreak())
+                y_start = 700  # Reset y_start for new page
+
+# Sample data mimicking your JSON-like structure
+content_data = [
+    {
+        'header': "Page 1 Header",
+        'rows': [
+            ["val1", "val2"],
+            ["val3", "val4"],
+            ["This is a very long text that should wrap within the cell", "val6"],
+            ["val7", "val8"]
+        ]
+    },
+    {
+        'header': "Page 2 Header",
+        'rows': [
+            ["val9", "val10"],
+            ["val11", "val12"],
+            ["This is another long text that should wrap nicely", "val14"]
+        ]
+    }
+]
+
+# Create the div-style table
+create_div_table(content_data)
+
+# Build the document with the content
+document.build(content)
+
+print("PDF generated successfully with div-style table!")
