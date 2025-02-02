@@ -1,0 +1,63 @@
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
+# Create a PDF document
+pdf_file = "output_reportlab.pdf"
+document = SimpleDocTemplate(pdf_file, pagesize=letter)
+
+# Build the content of the PDF
+content = []
+
+# Title and Subtitle (using Paragraph)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Paragraph
+
+# Create a title and subtitle
+styles = getSampleStyleSheet()
+title_style = styles['Heading1']
+subtitle_style = ParagraphStyle(name='subtitle', fontSize=14, spaceAfter=12)
+
+title = Paragraph("<b>Title</b>", title_style)
+subtitle = Paragraph("<i>SubTitle</i>", subtitle_style)
+
+# Add title and subtitle to the content
+content.append(title)
+content.append(subtitle)
+
+# Table data
+data = [
+    ['Name', 'Age'],
+    ['Alice', 24],
+    ['Bob', 27],
+    ['Charlie', 22]
+]
+
+# Create table and style it
+table = Table(data)
+table.setStyle(TableStyle([
+    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),  # Header row text color
+    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),        # Center-align all cells
+    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Make header bold
+    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),        # Padding for header
+    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Header background color
+    ('GRID', (0, 0), (-1, -1), 1, colors.black),   # Grid lines for the table
+    ('BOTTOMPADDING', (0, 1), (-1, -1), 8),        # Padding for table cells
+]))
+
+# Add table to content
+content.append(table)
+
+# Build the document
+document.build(content)
+
+print("PDF generated successfully!")
+
+
+
+
+
+
+
+
