@@ -52,12 +52,18 @@ def process_page(header_text, table_data):
 
     # Create and style the table
     table_obj = Table(table)
+     # Apply styles to table cells including word wrapping
     table_obj.setStyle(TableStyle([
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),  # Header row text color
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),        # Center-align all cells
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Make header bold
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Header background color
         ('GRID', (0, 0), (-1, -1), 1, colors.black),   # Grid lines for the table
+        ('WORDSPACE', (0, 0), (-1, -1), 1),            # Word wrapping for text inside table cells
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),           # Left align for data cells
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),        # Vertically align text to middle
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),  # Text color for data cells
+        ('WORDWRAP', (0, 0), (-1, -1), True),  # Enable word wrapping inside the cells
     ]))
 
     content.append(table_obj)
