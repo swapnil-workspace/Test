@@ -1,0 +1,91 @@
+import React from 'react';
+
+const ReadOnlyFormWrapper = ({ children }) => {
+  const disableFormElements = (element) => {
+    if (element && (element.type === 'input' || element.type === 'textarea' || element.type === 'select')) {
+      element.disabled = true;
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => e.preventDefault()}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          // Recursively apply to child elements
+          React.Children.map(child.props.children, disableFormElements);
+          disableFormElements(child);
+        }
+        return child;
+      })}
+    </form>
+  );
+};
+
+export default ReadOnlyFormWrapper;
+
+
+import React from 'react';
+import ReadOnlyFormWrapper from './ReadOnlyFormWrapper';
+
+const YourForm = () => {
+  return (
+    <ReadOnlyFormWrapper>
+      <form>
+        <label>Username:</label>
+        <input type="text" name="username" />
+        
+        <label>Email:</label>
+        <input type="email" name="email" />
+        
+        <label>Message:</label>
+        <textarea name="message"></textarea>
+        
+        <label>Country:</label>
+        <select name="country">
+          <option>USA</option>
+          <option>Canada</option>
+          <option>UK</option>
+        </select>
+
+        <button type="submit">Submit</button>
+      </form>
+    </ReadOnlyFormWrapper>
+  );
+};
+
+export default YourForm;
+
+
+const disableFormElements = (element) => {
+  if (element && (element.type === 'input' || element.type === 'textarea' || element.type === 'select' || element.type === 'button')) {
+    element.disabled = true;
+  }
+};
+
+
+const ReadOnlyFormWrapper = ({ children, readOnly = true }) => {
+  const disableFormElements = (element) => {
+    if (element && (element.type === 'input' || element.type === 'textarea' || element.type === 'select')) {
+      element.disabled = readOnly;
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => e.preventDefault()}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          // Recursively apply to child elements
+          React.Children.map(child.props.children, disableFormElements);
+          disableFormElements(child);
+        }
+        return child;
+      })}
+    </form>
+  );
+};
+
+
+
+<ReadOnlyFormWrapper readOnly={true}>
+  {/* Your form contents */}
+</ReadOnlyFormWrapper>
