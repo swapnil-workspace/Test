@@ -89,3 +89,37 @@ const ReadOnlyFormWrapper = ({ children, readOnly = true }) => {
 <ReadOnlyFormWrapper readOnly={true}>
   {/* Your form contents */}
 </ReadOnlyFormWrapper>
+
+
+
+
+import React from 'react';
+
+// Helper function to recursively disable form elements
+const disableFormElementsRecursively = (element) => {
+  // Disable form elements based on type
+  if (element && (element.type === 'input' || element.type === 'textarea' || element.type === 'select' || element.type === 'button' || element.type === 'fieldset')) {
+    element.disabled = true;
+  }
+
+  // Recursively process child elements if any
+  if (element.props && element.props.children) {
+    React.Children.forEach(element.props.children, disableFormElementsRecursively);
+  }
+};
+
+const ReadOnlyFormWrapper = ({ children }) => {
+  React.useEffect(() => {
+    // Find all the form elements inside the children and disable them
+    React.Children.forEach(children, disableFormElementsRecursively);
+  }, [children]); // Re-run if children change
+
+  return (
+    <form onSubmit={(e) => e.preventDefault()}>
+      {children}
+    </form>
+  );
+};
+
+export default ReadOnlyFormWrapper;
+
