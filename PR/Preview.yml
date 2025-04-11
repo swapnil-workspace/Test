@@ -1,0 +1,101 @@
+name: Deploy UI Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - main # Or your main branch name
+
+jobs:
+  build-and-deploy-preview:
+    runs-on: ubuntu-latest
+    environment:
+      name: Preview
+      url: ${{ steps.deploy.outputs.webapp-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Pull Request Number
+        id: pr_number
+        run: echo "PR_NUMBER=$(echo ${{ github.event.pull_request.number }})" >> $GITHUB_ENV
+
+      # Option 1: Create a new Azure Web App for each PR
+      - name: Create Web App
+        id: create_webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}-${{ env.PR_NUMBER }}
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          plan: ${{ needs.build-and-deploy-preview.outputs.plan-name }} # Define this in a previous step if needed
+          package: ./build
+
+      - name: Set Output for Web App URL (Option 1)
+        if: steps.create_webapp.outcome == 'success'
+        id: deploy
+        run: echo "::set-output name=webapp-url::https://${{ secrets.AZURE_WEBAPP_NAME }}-${{ env.PR_NUMBER }}.azurewebsites.net"
+
+      # Option 2: Deploy to a deployment slot
+      # - name: Get or Create Deployment Slot
+      #   id: get_or_create_slot
+      #   uses: azure/CLI@v1
+      #   with:
+      #     azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+      #     inlineScript: |
+      #       slot_name="pr-${{ env.PR_NUMBER }}"
+      #       if az webapp deployment slot show --name "${{ secrets.AZURE_WEBAPP_NAME }}" --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" --slot "$slot_name" > /dev/null 2>&1; then
+      #         echo "Slot $slot_name already exists"
+      #         echo "SLOT_NAME=$slot_name" >> $GITHUB_ENV
+      #       else
+      #         echo "Creating slot $slot_name"
+      #         az webapp deployment slot create --name "${{ secrets.AZURE_WEBAPP_NAME }}" --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" --slot "$slot_name"
+      #         echo "SLOT_NAME=$slot_name" >> $GITHUB_ENV
+      #       fi
+
+      # - name: Deploy to Slot (Option 2)
+      #   if: steps.get_or_create_slot.outcome == 'success'
+      #   uses: azure/webapps-deploy@v3
+      #   with:
+      #     app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+      #     resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      #     slot-name: ${{ env.SLOT_NAME }}
+      #     package: ./build
+
+      # - name: Set Output for Web App URL (Option 2)
+      #   if: steps.deploy.outcome == 'success' # Adjust based on which deployment option you use
+      #   id: deploy
+      #   run: echo "::set-output name=webapp-url::https://${{ secrets.AZURE_WEBAPP_NAME }}-${{ env.SLOT_NAME }}.azurewebsites.net" # Or a custom domain if configured
+
+      - name: Comment on Pull Request
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            const comment = `🎉 UI Preview deployed for this pull request: ${{ steps.deploy.outputs.webapp-url }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: comment
+            });
+
+      - name: Azure Logout
+        run: az logout
