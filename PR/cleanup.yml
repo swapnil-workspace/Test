@@ -1,0 +1,42 @@
+name: Cleanup UI Preview
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main # Or your main branch name
+
+jobs:
+  cleanup-preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Pull Request Number
+        id: pr_number
+        run: echo "PR_NUMBER=$(echo ${{ github.event.pull_request.number }})" >> $GITHUB_ENV
+
+      # Option 1: Delete the Web App
+      - name: Delete Web App
+        uses: azure/CLI@v1
+        with:
+          azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+          inlineScript: |
+            az webapp delete --name "${{ secrets.AZURE_WEBAPP_NAME }}-${{ env.PR_NUMBER }}" --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" --yes
+        if: ${{ always() }} # Ensure this runs even if previous steps fail
+
+      # Option 2: Delete the Deployment Slot
+      # - name: Delete Deployment Slot
+      #   uses: azure/CLI@v1
+      #   with:
+      #     azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+      #     inlineScript: |
+      #       az webapp deployment slot delete --name "${{ secrets.AZURE_WEBAPP_NAME }}" --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" --slot "pr-${{ env.PR_NUMBER }}" --yes
+      #   if: ${{ always() }}
+
+      - name: Azure Logout
+        run: az logout
