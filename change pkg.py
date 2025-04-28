@@ -1,18 +1,21 @@
 import os
 import json
 
-def update_gateway_version(root_dir, new_version):
+def update_gateway_version_subdirectory(root_dir, new_version):
     """
-    Updates the @apollo/gateway version in package.json files found in subdirectories.
+    Updates the @apollo/gateway version in package.json files found directly in subdirectories
+    of the root directory.
 
     Args:
-        root_dir (str): The root directory to start the search from.
+        root_dir (str): The root directory to search within.
         new_version (str): The new version string for @apollo/gateway (e.g., "2.10.0").
     """
     updated_count = 0
-    for subdir, _, files in os.walk(root_dir):
-        if "package.json" in files:
-            filepath = os.path.join(subdir, "package.json")
+    subdirectories = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
+
+    for subdir_name in subdirectories:
+        filepath = os.path.join(root_dir, subdir_name, "package.json")
+        if os.path.exists(filepath):
             try:
                 with open(filepath, 'r') as f:
                     data = json.load(f)
@@ -40,10 +43,12 @@ def update_gateway_version(root_dir, new_version):
                 print(f"Error: Could not decode JSON in: {filepath}")
             except Exception as e:
                 print(f"An unexpected error occurred with {filepath}: {e}")
+        else:
+            print(f"package.json not found in subdirectory: {os.path.join(root_dir, subdir_name)}")
 
-    print(f"\nSuccessfully updated @apollo/gateway in {updated_count} package.json files.")
+    print(f"\nSuccessfully updated @apollo/gateway in {updated_count} package.json files within the first level of subdirectories.")
 
 if __name__ == "__main__":
     root_directory = input("Enter the root directory containing the subdirectories: ")
     new_gateway_version = "2.10.0"
-    update_gateway_version(root_directory, new_gateway_version)
+    update_gateway_version_subdirectory(root_directory, new_gateway_version)
