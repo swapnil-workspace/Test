@@ -1,0 +1,29 @@
+[
+  {
+    "id": "PROD001",
+    "name": "Super Widget 3000",
+    "category": "Electronics",
+    "price": 199.99,
+    "description": "A high-performance widget with advanced features, perfect for home and office use. Comes with a 1-year warranty.",
+    "features": ["Bluetooth 5.0", "Long Battery Life", "Water Resistant"],
+    "availability": "In Stock"
+  },
+  {
+    "id": "PROD002",
+    "name": "Eco-Friendly Water Bottle",
+    "category": "Home Goods",
+    "price": 25.00,
+    "description": "Made from recycled materials, this water bottle keeps your drinks cold for 24 hours and hot for 12 hours.",
+    "features": ["BPA-Free", "Double-walled insulation", "Leak-proof cap"],
+    "availability": "Low Stock"
+  },
+  {
+    "id": "PROD003",
+    "name": "Smart Coffee Maker",
+    "category": "Kitchen Appliances",
+    "price": 120.50,
+    "description": "Brew your coffee from anywhere with this smart coffee maker. Integrates with smart home systems.",
+    "features": ["Wi-Fi connectivity", "Programmable brew time", "Self-cleaning"],
+    "availability": "Pre-order"
+  }
+]
