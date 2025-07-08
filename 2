@@ -1,95 +1,97 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dynamic PDF Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        table, th, td { border: 1px solid #ddd; }
-        th, td { padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-    </style>
-</head>
-<body>
-    <h1>Dynamic PDF Report</h1>
-    <p>Date: {{ date }}</p>
-    
-    <h2>Details</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Amount</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for record in records %}
-            <tr>
-                <td>{{ record.name }}</td>
-                <td>{{ record.amount }}</td>
-                <td>{{ record.status }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
+from chatgpt_integration import ChatGPTIntegration
+from product_knowledge_base import ProductKnowledgeBase
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
+class ProductChatbot:
+    def __init__(self, json_file_path="data/products.json", chatgpt_llm_model="gpt-3.5-turbo", chatgpt_embedding_model="text-embedding-ada-002", chroma_db_path="./chroma_db", intent_confidence_threshold=0.8):
+        self.chat_gpt = ChatGPTIntegration(llm_model=chatgpt_llm_model, embedding_model=chatgpt_embedding_model)
+        self.product_kb = ProductKnowledgeBase(json_file_path, self.chat_gpt.get_embedding_model(), persist_directory=chroma_db_path)
+        self.conversation_history = []
+        self.intent_confidence_threshold = intent_confidence_threshold
+        print("Chatbot initialized. Type 'exit' to quit.")
 
+        # Define the RAG prompt template
+        self.rag_prompt_template = ChatPromptTemplate.from_messages(
+            [
+                SystemMessage(content=(
+                    "You are a helpful assistant that answers questions about products. "
+                    "Use the following retrieved product information to answer the user's question. "
+                    "If the product information does not contain the answer, state that you cannot find the information. "
+                    "Do not make up information.\n\n"
+                    "Retrieved Product Information:\n{context}"
+                )),
+                HumanMessage(content="{query}")
+            ]
+        )
 
+        # Create the RAG chain (LangChain Expression Language)
+        # This chain will:
+        # 1. Take the user query.
+        # 2. Retrieve relevant documents using self.product_kb.get_relevant_product_info.
+        # 3. Format the retrieved documents as 'context'.
+        # 4. Pass 'context' and 'query' to the RAG prompt.
+        # 5. Invoke the LLM with the structured prompt.
+        # 6. Parse the LLM's output into a string.
+        self.rag_chain = (
+            {"context": self.product_kb.get_relevant_product_info, "query": RunnablePassthrough()}
+            | self.rag_prompt_template
+            | self.chat_gpt.get_llm_for_rag()
+            | StrOutputParser()
+        )
 
+    def _get_intent(self, user_query):
+        """
+        Uses the LLM to classify the user's intent.
+        """
+        intent, confidence = self.chat_gpt.classify_intent_with_llm(user_query)
+        print(f"Intent classified as: {intent} (Confidence: {confidence:.2f})")
+        return intent
 
-from jinja2 import Environment, FileSystemLoader
+    def process_query(self, user_query):
+        """
+        Main method to process a user query, determine intent, and generate a response.
+        """
+        intent = self._get_intent(user_query)
+        response_text = ""
 
-# Set up Jinja2 to load the template
-env = Environment(loader=FileSystemLoader('templates'))  # assuming the template is in the "templates" folder
-template = env.get_template('template.html')
+        if intent == "Product_Query":
+            print("Detected Product Query. Initiating RAG...")
+            try:
+                # Use the RAG chain to get a product-specific response
+                response_text = self.rag_chain.invoke(user_query)
+                # print(f"RAG Chain Output: {response_text}") # For debugging RAG output
+            except Exception as e:
+                print(f"Error during RAG processing: {e}")
+                response_text = "I encountered an error trying to find product information. Please try again or rephrase your question."
+        else:
+            print("Detected General Query. Using general LLM chat.")
+            # Use the general chat response from ChatGPTIntegration
+            # Convert conversation history to LangChain message objects
+            lc_history = []
+            for msg_type, msg_content in self.conversation_history:
+                if msg_type == "human":
+                    lc_history.append(HumanMessage(content=msg_content))
+                elif msg_type == "ai":
+                    lc_history.append(AIMessage(content=msg_content))
 
-# Render the HTML with dynamic data
-html_output = template.render(data)
+            response_text = self.chat_gpt.get_chat_response(user_query, conversation_history=lc_history)
 
+        # Update conversation history
+        self.conversation_history.append(("human", user_query))
+        self.conversation_history.append(("ai", response_text))
+        
+        return response_text
 
-
-from xhtml2pdf import pisa
-
-def generate_pdf(html_content, output_file="report.pdf"):
-    # Open the output file in binary write mode
-    with open(output_file, "wb") as pdf_file:
-        # Convert the HTML to PDF
-        pisa.CreatePDF(html_content, dest=pdf_file)
-
-# Generate the PDF using the rendered HTML
-generate_pdf(html_output)
-
-
-from jinja2 import Environment, FileSystemLoader
-from xhtml2pdf import pisa
-
-# Data to be passed into the PDF template
-data = {
-    'date': 'January 5, 2025',
-    'records': [
-        {'name': 'John Doe', 'amount': '$1200', 'status': 'Paid'},
-        {'name': 'Jane Smith', 'amount': '$900', 'status': 'Pending'},
-        {'name': 'Alice Brown', 'amount': '$500', 'status': 'Paid'}
-    ]
-}
-
-# Step 1: Set up Jinja2 to load the template
-env = Environment(loader=FileSystemLoader('templates'))  # Assuming the template is inside "templates" folder
-template = env.get_template('template.html')
-
-# Step 2: Render the HTML with dynamic data
-html_output = template.render(data)
-
-# Step 3: Convert the rendered HTML to PDF using xhtml2pdf
-def generate_pdf(html_content, output_file="report.pdf"):
-    with open(output_file, "wb") as pdf_file:
-        pisa.CreatePDF(html_content, dest=pdf_file)
-
-# Generate the PDF using the rendered HTML
-generate_pdf(html_output)
-
-print("PDF generated successfully!")
+    def chat_loop(self):
+        """Runs the main chat loop."""
+        while True:
+            user_input = input("You: ")
+            if user_input.lower() == 'exit':
+                print("Chatbot: Goodbye!")
+                break
+            
+            response = self.process_query(user_input)
+            print(f"Chatbot: {response}")
