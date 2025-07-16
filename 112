@@ -1,0 +1,29 @@
+import azure.functions as func
+import logging
+
+# Import the ASGIMiddleware from azure-functions-fastapi
+from azure_functions_fastapi import ASGIMiddleware
+
+# Import your FastAPI app instance
+# Adjust the relative import path based on your exact project structure.
+# If app.py is in the same directory as __init__.py, it would be 'from .app import app'
+# If app.py is in a parent directory 'app/', it might be 'from ..app.app import app'
+from .app import app # Assuming 'app.py' is in the same directory as '__init__.py'
+
+# Create the ASGI middleware for your FastAPI app
+# This makes your FastAPI app callable by the Azure Function host
+http_app = ASGIMiddleware(app)
+
+# The main Azure Function entry point
+# The name 'http_trigger' (or whatever you choose) must match function.json
+def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request via FastAPI.')
+    
+    # Pass the Azure Functions HttpRequest object to the FastAPI middleware.
+    # The middleware will handle:
+    # 1. Converting HttpRequest to ASGI scope/receive.
+    # 2. Routing to your FastAPI endpoint (e.g., /initial_query).
+    # 3. Parsing the JSON request body into your TextInput Pydantic model.
+    # 4. Executing your FastAPI route logic.
+    # 5. Converting the FastAPI response back to an Azure Functions HttpResponse.
+    return http_app.handle(req)
