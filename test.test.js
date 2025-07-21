@@ -1,23 +1,24 @@
-// test/cmd.test.mjs
+// test/cmd.test.js
 
 import chai from 'chai';
 import sinon from 'sinon'; // For mocking
 const expect = chai.expect;
 
 // Import the function to be tested
-import { parseDleHandler } from '../cmd.mjs'; // Adjust path if needed
+// OMITTING .js EXTENSION FOR LOCAL IMPORTS, as Babel resolves them
+import { parseDleHandler } from '../cmd'; // Adjust path if needed
 
 // Import modules that parseDleHandler depends on, for mocking purposes
 // You need to import them to replace their methods with stubs/spies
-import * as createOutDirectoryModule from '../createOutDirectory.mjs';
-import * as logmessageModule from '../logs/info.mjs';
-import * as validateDirectoriesModule from '../utils/validation/directories.mjs';
-import * as validateInputModule from '../utils/input/validateInput.mjs';
-import * as dleFilesModule from '../utils/dle/index.mjs'; // Contains getUnparsedDleFiles, getParsedWorkbook
-import * as profilesModule from '../utils/choices/profiles.mjs';
-import * as parserModule from '../parser.mjs'; // Contains parseDles
-import * as configModule from '../config/config.mjs';
-import store from '../store/index.mjs'; // Assuming 'store' is a default export or a singleton instance
+import * as createOutDirectoryModule from '../createOutDirectory';
+import * as logmessageModule from '../logs/info';
+import * as validateDirectoriesModule from '../utils/validation/directories';
+import * as validateInputModule from '../utils/input/validateInput';
+import * as dleFilesModule from '../utils/dle/index'; // Contains getUnparsedDleFiles, getParsedWorkbook
+import * as profilesModule from '../utils/choices/profiles';
+import * as parserModule from '../parser'; // Contains parseDles
+import * as configModule from '../config/config';
+import store from '../store/index'; // Assuming 'store' is a default export or a singleton instance
 
 describe('parseDleHandler', () => {
     let sandbox; // Use a sandbox for managing stubs/spies
@@ -118,8 +119,8 @@ describe('parseDleHandler', () => {
 
     it('should return an empty array if no DLE files are found', async () => {
         // Override the mock for this specific test
-        dleFilesModule.getUnparsedDleFiles.resolves([]);
-        dleFilesModule.getParsedWorkbook.resolves([]); // Also for workbook case
+        sandbox.stub(dleFilesModule, 'getUnparsedDleFiles').resolves([]); // Override for this test
+        sandbox.stub(dleFilesModule, 'getParsedWorkbook').resolves([]); // Override for this test
 
         const options = {
             environment: 'dev',
