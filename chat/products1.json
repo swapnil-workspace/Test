@@ -1,0 +1,97 @@
+[
+    {
+      "taxonomyProductId": 12345,
+      "taxonomyProductName": "DiabetesmentProgram",
+      "products": [
+        {
+          "productId": 42424,
+          "productName": "DiabetesManagementProgram",
+          "productSmeName": "KKKKKK",
+          "components": [
+            
+          ],
+          "marketSegments": [
+            {
+              "productAvailability": "GA",
+              "status": "active",
+              "marketSegmentName": "Employer",
+              "membershipTypes": [
+                "Commercial",
+                "Medical"
+              ]
+            }
+          ]
+        },
+        {
+          "productId": 87687,
+          "productName": "LiverManagementProgram",
+          "productSmeName": "HHHHH",
+          "components": [
+            
+          ],
+          "marketSegments": [
+            {
+              "productAvailability": "GAHK",
+              "status": "active",
+              "marketSegmentName": "Employer",
+              "membershipTypes": [
+                "Commercial",
+                "Medical",
+                "Medicaid"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taxonomyProductId": 9890,
+      "taxonomyProductName": "Health Program",
+      "products": [
+        {
+          "productId": 6757,
+          "productName": "NewManagementProgram",
+          "productSmeName": "OOOOO",
+          "components": [
+            {
+              "componentID": 10,
+              "componentName": "ABC"
+            },
+            {
+              "componentID": 34,
+              "componentName": "HHF"
+            }
+          ],
+          "marketSegments": [
+            {
+              "productAvailability": "GA",
+              "status": "active",
+              "marketSegmentName": "Employer",
+              "membershipTypes": [
+                "Commercial"
+                
+              ]
+            }
+          ]
+        },
+        {
+          "productId": 809,
+          "productName": "HeartManagementProgram",
+          "productSmeName": "HHHHH",
+          "components": [
+            
+          ],
+          "marketSegments": [
+            {
+              "productAvailability": "GAHK",
+              "status": "active",
+              "marketSegmentName": "Employer",
+              "membershipTypes": [
+                "Medicaid"
+              ]
+            }
+          ]
+        }
+      ]
+    }  
+  ]
