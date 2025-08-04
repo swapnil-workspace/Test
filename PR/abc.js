@@ -29,6 +29,29 @@ app.get('/cpu-intensive', (req, res) => {
   });
 });
 
+
+
+
+
+
+
+// Graceful shutdown handler
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+});
+
 // Endpoint for memory-intensive task (simulated leak)
 app.get('/memory-intensive', (req, res) => {
   console.log('Received a request for memory-intensive task');
